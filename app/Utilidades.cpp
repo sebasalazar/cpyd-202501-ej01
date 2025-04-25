@@ -9,7 +9,7 @@ std::tm parsear_fecha(const std::string& fechaStr) {
     return fecha;
 }
 
-std::string formatear_fecha(std::tm& fecha) {
+std::string formatear_fecha(const std::tm& fecha) {
     std::ostringstream oss;
     oss << std::put_time(&fecha, "%Y-%m-%d");
     return oss.str();

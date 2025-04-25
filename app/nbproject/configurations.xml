@@ -2,6 +2,8 @@
 <configurationDescriptor version="100">
   <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
     <df root="." name="0">
+      <in>Opcional.cpp</in>
+      <in>Opcional.h</in>
       <in>Person.cpp</in>
       <in>Persona.cpp</in>
       <in>Persona.h</in>
@@ -53,6 +55,10 @@
           <preBuildCommand></preBuildCommand>
         </preBuild>
       </makefileType>
+      <item path="Opcional.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="Opcional.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="Person.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="0">
         </ccTool>

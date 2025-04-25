@@ -4,6 +4,8 @@
 #include <vector>
 #include "Utilidades.h"
 #include "Persona.h"
+#include "ServicioBD.h"
+#include "Opcional.h"
 
 
 
@@ -56,6 +58,17 @@ int main(int argc, char** argv) {
                     personas.push_back(p);
                 } else {
                     std::cerr << "Advertencia: Línea con formato incorrecto -> " << linea << "\n";
+                }
+            }
+
+            // En este punto, almaceno los datos en la base de datos
+            ServicioBD db;
+            for (Persona& p : personas) {
+                Opcional<Persona> original = db.getPersonaByRut(p.GetRut());
+                if (original.has_value()) {
+                    db.updatePersona(p.GetRut(), p.GetNombres(), p.GetApellidos(), formatear_fecha(p.GetFechaNacimiento()));
+                } else {
+                    db.createPersona(p.GetRut(), p.GetNombres(), p.GetApellidos(), formatear_fecha(p.GetFechaNacimiento()));
                 }
             }
         }

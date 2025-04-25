@@ -11,7 +11,7 @@
 
 std::tm parsear_fecha(const std::string& fechaStr);
 
-std::string formatear_fecha(std::tm& fecha);
+std::string formatear_fecha(const std::tm& fecha);
 
 std::string limpiarRut(const std::string &rut);
 

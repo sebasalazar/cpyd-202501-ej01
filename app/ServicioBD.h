@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <pqxx/pqxx>
+#include "Opcional.h"
 #include "Persona.h"
 
 class ServicioBD {
@@ -20,7 +21,9 @@ public:
     // CREATE: Inserta una nueva persona.
     bool createPersona(long rut, const std::string &firstname, const std::string &lastname, const std::string &birthdate);
     // READ: Obtiene una persona por su ID.
-    Persona getPersonaById(long id);
+    Opcional<Persona> getPersonaById(long id);
+    // READ: Obtiene una persona por su RUT.
+    Opcional<Persona> getPersonaByRut(long rut);
     // READ: Obtiene todas las personas.
     std::vector<Persona> getAllPersonas();
     // UPDATE: Actualiza los datos de una persona.
