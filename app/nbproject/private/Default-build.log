@@ -1,0 +1,9 @@
+rm -fr *.o a.out core programa dist build
+mkdir -p build dist
+g++ -g3 -Wall -std=c++17 -c main.cpp -o build/main.o
+g++ -g3 -Wall -std=c++17 -c Persona.cpp -o build/Persona.o
+g++ -g3 -Wall -std=c++17 -o dist/programa \
+build/main.o \
+        build/Persona.o \
+-lm
+rm -fr build

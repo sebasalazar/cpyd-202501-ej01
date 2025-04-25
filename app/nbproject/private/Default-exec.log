@@ -1,0 +1,34 @@
+called: /usr/bin/g++
+	/home/seba/sources/UTEM/cpyd-202501-ej01/app
+	g++
+	-g3
+	-Wall
+	-std=c++17
+	-c
+	main.cpp
+	-o
+	build/main.o
+
+called: /usr/bin/g++
+	/home/seba/sources/UTEM/cpyd-202501-ej01/app
+	g++
+	-g3
+	-Wall
+	-std=c++17
+	-c
+	Persona.cpp
+	-o
+	build/Persona.o
+
+called: /usr/bin/g++
+	/home/seba/sources/UTEM/cpyd-202501-ej01/app
+	g++
+	-g3
+	-Wall
+	-std=c++17
+	-o
+	dist/programa
+	build/main.o
+	build/Persona.o
+	-lm
+
