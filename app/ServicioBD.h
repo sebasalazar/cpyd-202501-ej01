@@ -6,14 +6,18 @@
 #include <string>
 #include <vector>
 #include <pqxx/pqxx>
+#include <memory>
+#include <queue>
+#include <mutex>
+#include <condition_variable>
+#include <functional>
 #include "Opcional.h"
 #include "Persona.h"
 
 class ServicioBD {
 public:
     ServicioBD();
-    // Constructor: establece la conexión a la base de datos.
-    ServicioBD(const std::string &connStr);
+    explicit ServicioBD(const std::string& connStr, std::size_t poolSize = 10);
     // Destructor: cierra la conexión y libera memoria.
     ~ServicioBD();
 
@@ -32,7 +36,25 @@ public:
     bool deletePersona(long id);
 
 private:
-    pqxx::connection *conn; // Puntero a la conexión con la BD.
+
+    class ConnectionPool {
+    private:
+        std::queue<std::shared_ptr<pqxx::connection>> pool;
+        std::mutex mtx;
+        std::condition_variable cv;
+        std::size_t maxSize;
+        std::string connectionString;
+
+    public:
+        ConnectionPool(std::size_t maxSize, const std::string& connStr);
+        std::shared_ptr<pqxx::connection> acquire();
+        void release(std::shared_ptr<pqxx::connection> conn);
+    };
+
+    std::unique_ptr<ConnectionPool> connectionPool;
+
+    template<typename Func>
+    auto usarConexion(Func&& f) -> decltype(f(std::declval<pqxx::connection&>()));
 };
 
 #endif // SERVICIO_BD_H

@@ -1,34 +1,52 @@
 #include "Persona.h"
 
 // Constructor por defecto usando lista de inicializadores
+
 Persona::Persona()
-    : id(0), rut(0), nombres(""), apellidos(""),
-      fechaNacimiento({}), creacion({}), actualizacion({}) {
+: id(0), rut(0), nombres(""), apellidos(""),
+fechaNacimiento({}), creacion({}), actualizacion({}) {
 }
 
 // Constructor parametrizado usando funciones de conversión de "Utilidades.h"
+
 Persona::Persona(const std::string& rut,
-                 const std::string& nombres,
-                 const std::string& apellidos,
-                 const std::string& fechaNacimiento)
-    : id(0),
-      rut(obtenerRutNumerico(rut)),
-      nombres(nombres),
-      apellidos(apellidos),
-      fechaNacimiento(parsear_fecha(fechaNacimiento)),
-      creacion({}),
-      actualizacion({}) {
+        const std::string& nombres,
+        const std::string& apellidos,
+        const std::string& fechaNacimiento)
+: id(0),
+rut(obtenerRutNumerico(rut)),
+nombres(nombres),
+apellidos(apellidos),
+fechaNacimiento(parsear_fecha(fechaNacimiento)),
+creacion({}),
+actualizacion({}) {
+}
+
+Persona::Persona(const std::string& rut,
+        const std::string& nombres,
+        const std::string& apellidos,
+        const std::string& fechaNacimiento,
+        const std::string& fechaCreacion,
+        const std::string& fechaActualizacion)
+: id(0),
+rut(obtenerRutNumerico(rut)),
+nombres(nombres),
+apellidos(apellidos),
+fechaNacimiento(parsear_fecha(fechaNacimiento)),
+creacion(parsear_fecha(fechaCreacion)),
+actualizacion(parsear_fecha(fechaActualizacion)) {
 }
 
 // Constructor de copia
+
 Persona::Persona(const Persona& orig)
-    : id(orig.id),
-      rut(orig.rut),
-      nombres(orig.nombres),
-      apellidos(orig.apellidos),
-      fechaNacimiento(orig.fechaNacimiento),
-      creacion(orig.creacion),
-      actualizacion(orig.actualizacion) {
+: id(orig.id),
+rut(orig.rut),
+nombres(orig.nombres),
+apellidos(orig.apellidos),
+fechaNacimiento(orig.fechaNacimiento),
+creacion(orig.creacion),
+actualizacion(orig.actualizacion) {
 }
 
 Persona::~Persona() {

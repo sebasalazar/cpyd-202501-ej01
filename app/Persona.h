@@ -13,6 +13,12 @@ public:
             const std::string& nombres,
             const std::string& apellidos,
             const std::string& fechaNacimiento);
+    Persona(const std::string& rut,
+            const std::string& nombres,
+            const std::string& apellidos,
+            const std::string& fechaNacimiento,
+            const std::string& fechaCreacion,
+            const std::string& fechaActualizacion);
     Persona(const Persona& orig);
     virtual ~Persona();
 

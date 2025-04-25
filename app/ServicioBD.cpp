@@ -1,154 +1,162 @@
 #include "ServicioBD.h"
-#include "Opcional.h"
 
-ServicioBD::ServicioBD() {
-    try {
-        std::string connStr("host=159.223.200.213 user=cpyd dbname=cpyddb password=CPyD.2025 sslmode=allow");
-        conn = new pqxx::connection(connStr);
-        if (!conn->is_open()) {
-            throw std::runtime_error("No se pudo establecer la conexión a la base de datos.");
-        }
-        std::cout << "Conexión exitosa a la base de datos: " << conn->dbname() << std::endl;
-    } catch (const std::exception &e) {
-        throw std::runtime_error("Error al conectar: " + std::string(e.what()));
+ServicioBD::ConnectionPool::ConnectionPool(std::size_t maxSize, const std::string& connStr)
+: maxSize(maxSize), connectionString(connStr) {
+    for (std::size_t i = 0; i < maxSize; ++i) {
+        std::shared_ptr<pqxx::connection> conn = std::make_shared<pqxx::connection>(connectionString);
+        pool.push(conn);
     }
 }
 
-ServicioBD::ServicioBD(const std::string &connStr) {
-    try {
-        conn = new pqxx::connection(connStr);
-        if (!conn->is_open()) {
-            throw std::runtime_error("No se pudo establecer la conexión a la base de datos.");
-        }
-        std::cout << "Conexión exitosa a la base de datos: " << conn->dbname() << std::endl;
-    } catch (const std::exception &e) {
-        throw std::runtime_error("Error al conectar: " + std::string(e.what()));
+std::shared_ptr<pqxx::connection> ServicioBD::ConnectionPool::acquire() {
+    std::unique_lock<std::mutex> lock(mtx);
+    cv.wait(lock, [this]() -> bool {
+        return !pool.empty(); });
+
+    std::shared_ptr<pqxx::connection> conn = pool.front();
+    pool.pop();
+
+    if (!conn->is_open()) {
+        conn = std::make_shared<pqxx::connection>(connectionString);
+    }
+
+    return conn;
+}
+
+void ServicioBD::ConnectionPool::release(std::shared_ptr<pqxx::connection> conn) {
+    if (conn && conn->is_open()) {
+        std::unique_lock<std::mutex> lock(mtx);
+        pool.push(conn);
+        lock.unlock();
+        cv.notify_one();
     }
 }
 
-ServicioBD::~ServicioBD() {
-    if (conn) {
-        conn->close();
-        delete conn;
+ServicioBD::ServicioBD() :
+connectionPool(std::make_unique<ConnectionPool>(10, "host=159.223.200.213 user=cpyd dbname=cpyddb password=CPyD.2025 sslmode=allow")) {
+}
+
+ServicioBD::ServicioBD(const std::string& connStr, std::size_t poolSize)
+: connectionPool(std::make_unique<ConnectionPool>(poolSize, connStr)) {
+}
+
+template<typename Func>
+auto ServicioBD::usarConexion(Func&& f) -> decltype(f(std::declval<pqxx::connection&>())) {
+    std::shared_ptr<pqxx::connection> conn = connectionPool->acquire();
+    try {
+        auto resultado = f(*conn);
+        connectionPool->release(conn);
+        return resultado;
+    } catch (...) {
+        connectionPool->release(conn);
+        throw;
     }
 }
 
-bool ServicioBD::createPersona(long rut, const std::string &firstname, const std::string &lastname, const std::string &birthdate) {
-    try {
-        pqxx::work txn(*conn);
-        // Se asume que los campos 'id' (y en caso de existir campos con valores por defecto) son manejados automáticamente.
-        std::string sql = "INSERT INTO persons (rut, firstname, lastname, birthdate) VALUES ("
-                + txn.quote(rut) + ", "
-                + txn.quote(firstname) + ", "
-                + txn.quote(lastname) + ", "
-                + txn.quote(birthdate) + ");";
-        txn.exec(sql);
+// --------- CRUD ---------
+
+bool ServicioBD::createPersona(long rut, const std::string& firstname, const std::string& lastname, const std::tm& birthdate) {
+    return usarConexion([&](pqxx::connection & conn) -> bool {
+        pqxx::work txn(conn);
+        std::string query = "INSERT INTO persons (rut, firstname, lastname, birthdate) VALUES (" +
+                txn.quote(rut) + ", " +
+                txn.quote(firstname) + ", " +
+                txn.quote(lastname) + ", " +
+                txn.quote(formatear_fecha(birthdate)) + ")";
+        txn.exec(query);
         txn.commit();
         return true;
-    } catch (const std::exception &e) {
-        std::cerr << "Error al insertar persona: " << e.what() << std::endl;
-        return false;
-    }
+    });
 }
 
 Opcional<Persona> ServicioBD::getPersonaById(long id) {
-    Opcional<Persona> opt;
-    try {
-        pqxx::nontransaction ntx(*conn);
-        std::string sql = "SELECT pk, rut, firstname, lastname, birthdate, created, updated FROM persons WHERE id = "
-                + ntx.quote(id) + ";";
-        pqxx::result r = ntx.exec(sql);
-        if (r.size() == 1) {
-            auto row = r[0];
-            Persona p;
-            p.SetId(row["pk"].as<long>());
-            p.SetRut(row["rut"].as<long>());
-            p.SetNombres(row["firstname"].c_str());
-            p.SetApellidos(row["lastname"].c_str());
-            p.SetFechaNacimiento(parsear_fecha(row["birthdate"].c_str()));
-            p.SetCreacion(parsear_fecha(row["created"].c_str()));
-            p.SetActualizacion(parsear_fecha(row["updated"].c_str()));
-            opt = Opcional<Persona>(p);
+    return usarConexion([&](pqxx::connection & conn) -> Opcional<Persona> {
+        pqxx::work txn(conn);
+        std::string query = "SELECT id, rut, firstname, lastname, birthdate FROM persons WHERE id = " + txn.quote(id);
+        pqxx::result r = txn.exec(query);
+        txn.commit();
+
+        if (r.empty()) {
+            return Opcional<Persona>();
+        } else {
+            const pqxx::row& fila = r[0];
+                    Persona p(
+                    fila["id"].as<long>(),
+                    fila["rut"].as<long>(),
+                    fila["firstname"].as<std::string>(),
+                    fila["lastname"].as<std::string>(),
+                    fila["birthdate"].as<std::string>()
+                    );
+            return Opcional<Persona>(p);
         }
-    } catch (const std::exception &e) {
-        throw std::runtime_error("Error al obtener persona: " + std::string(e.what()));
-    }
-    return opt;
+    });
 }
 
 Opcional<Persona> ServicioBD::getPersonaByRut(long rut) {
-    Opcional<Persona> opt;
-    try {
-        pqxx::nontransaction ntx(*conn);
-        std::string sql = "SELECT pk, rut, firstname, lastname, birthdate, created, updated FROM persons WHERE rut = "
-                + ntx.quote(rut) + ";";
-        pqxx::result r = ntx.exec(sql);
-        if (r.size() == 1) {
-            auto row = r[0];
-            Persona p;
-            p.SetId(row["pk"].as<long>());
-            p.SetRut(row["rut"].as<long>());
-            p.SetNombres(row["firstname"].c_str());
-            p.SetApellidos(row["lastname"].c_str());
-            p.SetFechaNacimiento(parsear_fecha(row["birthdate"].c_str()));
-            p.SetCreacion(parsear_fecha(row["created"].c_str()));
-            p.SetActualizacion(parsear_fecha(row["updated"].c_str()));
-            opt = Opcional<Persona>(p);
+    return usarConexion([&](pqxx::connection & conn) -> Opcional<Persona> {
+        pqxx::work txn(conn);
+        std::string query = "SELECT id, rut, firstname, lastname, birthdate FROM persons WHERE rut = " + txn.quote(rut);
+        pqxx::result r = txn.exec(query);
+        txn.commit();
+
+        if (r.empty()) {
+            return Opcional<Persona>();
+        } else {
+            const pqxx::row& fila = r[0];
+                    Persona p(
+                    fila["id"].as<long>(),
+                    fila["rut"].as<long>(),
+                    fila["firstname"].as<std::string>(),
+                    fila["lastname"].as<std::string>(),
+                    fila["birthdate"].as<std::string>()
+                    );
+            return Opcional<Persona>(p);
         }
-    } catch (const std::exception &e) {
-        throw std::runtime_error("Error al obtener persona: " + std::string(e.what()));
-    }
-    return opt;
+    });
 }
 
 std::vector<Persona> ServicioBD::getAllPersonas() {
-    std::vector<Persona> personas;
-    try {
-        pqxx::nontransaction ntx(*conn);
-        pqxx::result r = ntx.exec("SELECT pk, rut, firstname, lastname, birthdate, created, updated FROM persons");
-        for (const auto &row : r) {
-            Persona p;
-            p.SetId(row["pk"].as<long>());
-            p.SetRut(row["rut"].as<long>());
-            p.SetNombres(row["firstname"].c_str());
-            p.SetApellidos(row["lastname"].c_str());
-            p.SetFechaNacimiento(parsear_fecha(row["birthdate"].c_str()));
-            p.SetCreacion(parsear_fecha(row["created"].c_str()));
-            p.SetActualizacion(parsear_fecha(row["updated"].c_str()));
-            personas.push_back(p);
+    return usarConexion([&](pqxx::connection & conn) -> std::vector<Persona> {
+        pqxx::work txn(conn);
+        std::string query = "SELECT id, rut, firstname, lastname, birthdate FROM persons";
+        pqxx::result r = txn.exec(query);
+        txn.commit();
+
+        std::vector<Persona> personss;
+        for (pqxx::result::const_iterator it = r.begin(); it != r.end(); ++it) {
+            const pqxx::row& fila = *it;
+                    Persona p(
+                    fila["id"].as<long>(),
+                    fila["rut"].as<long>(),
+                    fila["firstname"].as<std::string>(),
+                    fila["lastname"].as<std::string>(),
+                    fila["birthdate"].as<std::string>()
+                    );
+                    personss.push_back(p);
         }
-    } catch (const std::exception &e) {
-        std::cerr << "Error al obtener la lista de personas: " << e.what() << std::endl;
-    }
-    return personas;
+        return personss;
+    });
 }
 
-bool ServicioBD::updatePersona(long rut, const std::string &firstname, const std::string &lastname, const std::string &birthdate) {
-    try {
-        pqxx::work txn(*conn);
-        std::string sql = "UPDATE persons SET "
-                "firstname = " + txn.quote(firstname) + ", "
-                "lastname = " + txn.quote(lastname) + ", "
-                "birthdate = " + txn.quote(birthdate) +
-                " WHERE rut = " + txn.quote(rut) + ";";
-        txn.exec(sql);
+bool ServicioBD::updatePersona(long id, const std::string& firstname, const std::string& lastname, const std::string& birthdate) {
+    return usarConexion([&](pqxx::connection & conn) -> bool {
+        pqxx::work txn(conn);
+        std::string query = "UPDATE persons SET firstname = " + txn.quote(firstname) +
+                ", lastname = " + txn.quote(lastname) +
+                ", birthdate = " + txn.quote(birthdate) +
+                " WHERE id = " + txn.quote(id);
+        txn.exec(query);
         txn.commit();
         return true;
-    } catch (const std::exception &e) {
-        std::cerr << "Error al actualizar persona: " << e.what() << std::endl;
-        return false;
-    }
+    });
 }
 
 bool ServicioBD::deletePersona(long id) {
-    try {
-        pqxx::work txn(*conn);
-        std::string sql = "DELETE FROM persons WHERE pk = " + txn.quote(id) + ";";
-        txn.exec(sql);
+    return usarConexion([&](pqxx::connection & conn) -> bool {
+        pqxx::work txn(conn);
+        std::string query = "DELETE FROM persons WHERE id = " + txn.quote(id);
+        txn.exec(query);
         txn.commit();
         return true;
-    } catch (const std::exception &e) {
-        std::cerr << "Error al eliminar persona: " << e.what() << std::endl;
-        return false;
-    }
+    });
 }

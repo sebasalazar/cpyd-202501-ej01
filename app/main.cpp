@@ -65,7 +65,7 @@ int main(int argc, char** argv) {
             ServicioBD db;
             for (Persona& p : personas) {
                 Opcional<Persona> original = db.getPersonaByRut(p.GetRut());
-                if (original.has_value()) {
+                if (original.estaPresente()) {
                     db.updatePersona(p.GetRut(), p.GetNombres(), p.GetApellidos(), formatear_fecha(p.GetFechaNacimiento()));
                 } else {
                     db.createPersona(p.GetRut(), p.GetNombres(), p.GetApellidos(), formatear_fecha(p.GetFechaNacimiento()));
