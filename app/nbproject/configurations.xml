@@ -2,10 +2,12 @@
 <configurationDescriptor version="100">
   <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
     <df root="." name="0">
-      <in>FechaUtils.cpp</in>
       <in>Person.cpp</in>
       <in>Persona.cpp</in>
       <in>Persona.h</in>
+      <in>ServicioBD.cpp</in>
+      <in>ServicioBD.h</in>
+      <in>Utilidades.cpp</in>
       <in>main.cpp</in>
     </df>
     <logicalFolder name="ExternalFiles"
@@ -51,8 +53,6 @@
           <preBuildCommand></preBuildCommand>
         </preBuild>
       </makefileType>
-      <item path="FechaUtils.cpp" ex="false" tool="1" flavor2="0">
-      </item>
       <item path="Person.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="0">
         </ccTool>
@@ -62,6 +62,12 @@
         </ccTool>
       </item>
       <item path="Persona.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="ServicioBD.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="ServicioBD.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="Utilidades.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="main.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="0">

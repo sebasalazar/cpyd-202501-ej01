@@ -10,16 +10,17 @@ directorios:
 main.o: directorios main.cpp
 	$(CXX) $(CXXFLAGS) -c main.cpp -o build/main.o
 
-FechaUtils.o: directorios FechaUtils.cpp
-	$(CXX) $(CXXFLAGS) -c FechaUtils.cpp -o build/FechaUtils.o
+Utilidades.o: directorios Utilidades.cpp
+	$(CXX) $(CXXFLAGS) -c Utilidades.cpp -o build/Utilidades.o
 
 Persona.o: directorios Persona.cpp
 	$(CXX) $(CXXFLAGS) -c Persona.cpp -o build/Persona.o
 
-all: clean main.o Persona.o
+all: clean main.o Persona.o Utilidades.o
 	$(CXX) $(CXXFLAGS) -o dist/programa \
 	build/main.o \
         build/Persona.o \
+	build/Utilidades.o \
 	$(LIBS)
 	rm -fr build
 

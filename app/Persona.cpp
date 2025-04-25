@@ -1,9 +1,34 @@
 #include "Persona.h"
 
-Persona::Persona() {
+// Constructor por defecto usando lista de inicializadores
+Persona::Persona()
+    : id(0), rut(0), nombres(""), apellidos(""),
+      fechaNacimiento({}), creacion({}), actualizacion({}) {
 }
 
-Persona::Persona(const Persona& orig) {
+// Constructor parametrizado usando funciones de conversión de "Utilidades.h"
+Persona::Persona(const std::string& rut,
+                 const std::string& nombres,
+                 const std::string& apellidos,
+                 const std::string& fechaNacimiento)
+    : id(0),
+      rut(obtenerRutNumerico(rut)),
+      nombres(nombres),
+      apellidos(apellidos),
+      fechaNacimiento(parsear_fecha(fechaNacimiento)),
+      creacion({}),
+      actualizacion({}) {
+}
+
+// Constructor de copia
+Persona::Persona(const Persona& orig)
+    : id(orig.id),
+      rut(orig.rut),
+      nombres(orig.nombres),
+      apellidos(orig.apellidos),
+      fechaNacimiento(orig.fechaNacimiento),
+      creacion(orig.creacion),
+      actualizacion(orig.actualizacion) {
 }
 
 Persona::~Persona() {
@@ -13,7 +38,7 @@ std::string Persona::GetApellidos() const {
     return apellidos;
 }
 
-void Persona::SetApellidos(std::string apellidos) {
+void Persona::SetApellidos(const std::string& apellidos) {
     this->apellidos = apellidos;
 }
 
@@ -21,7 +46,7 @@ std::tm Persona::GetFechaNacimiento() const {
     return fechaNacimiento;
 }
 
-void Persona::SetFechaNacimiento(std::tm fechaNacimiento) {
+void Persona::SetFechaNacimiento(const std::tm& fechaNacimiento) {
     this->fechaNacimiento = fechaNacimiento;
 }
 
@@ -37,7 +62,7 @@ std::string Persona::GetNombres() const {
     return nombres;
 }
 
-void Persona::SetNombres(std::string nombres) {
+void Persona::SetNombres(const std::string& nombres) {
     this->nombres = nombres;
 }
 
@@ -47,4 +72,20 @@ long Persona::GetRut() const {
 
 void Persona::SetRut(long rut) {
     this->rut = rut;
+}
+
+std::tm Persona::GetActualizacion() const {
+    return actualizacion;
+}
+
+void Persona::SetActualizacion(const std::tm& actualizacion) {
+    this->actualizacion = actualizacion;
+}
+
+std::tm Persona::GetCreacion() const {
+    return creacion;
+}
+
+void Persona::SetCreacion(const std::tm& creacion) {
+    this->creacion = creacion;
 }

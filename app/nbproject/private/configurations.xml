@@ -4,11 +4,13 @@
     <df root="." name="0">
       <df name="dist">
       </df>
-      <in>FechaUtils.cpp</in>
-      <in>FechaUtils.h</in>
       <in>Person.cpp</in>
       <in>Persona.cpp</in>
       <in>Persona.h</in>
+      <in>ServicioBD.cpp</in>
+      <in>ServicioBD.h</in>
+      <in>Utilidades.cpp</in>
+      <in>Utilidades.h</in>
       <in>main.cpp</in>
     </df>
   </logicalFolder>
