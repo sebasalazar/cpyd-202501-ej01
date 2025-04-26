@@ -13,7 +13,8 @@ public:
             const std::string& nombres,
             const std::string& apellidos,
             const std::string& fechaNacimiento);
-    Persona(const std::string& rut,
+    Persona(const long& id,
+            const long& rut,
             const std::string& nombres,
             const std::string& apellidos,
             const std::string& fechaNacimiento,

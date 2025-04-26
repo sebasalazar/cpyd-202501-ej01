@@ -22,14 +22,15 @@ creacion({}),
 actualizacion({}) {
 }
 
-Persona::Persona(const std::string& rut,
+Persona::Persona(const long& id,
+        const long& rut,
         const std::string& nombres,
         const std::string& apellidos,
         const std::string& fechaNacimiento,
         const std::string& fechaCreacion,
         const std::string& fechaActualizacion)
-: id(0),
-rut(obtenerRutNumerico(rut)),
+: id(id),
+rut(rut),
 nombres(nombres),
 apellidos(apellidos),
 fechaNacimiento(parsear_fecha(fechaNacimiento)),

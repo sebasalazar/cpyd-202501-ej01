@@ -55,7 +55,7 @@ auto ServicioBD::usarConexion(Func&& f) -> decltype(f(std::declval<pqxx::connect
 
 // --------- CRUD ---------
 
-bool ServicioBD::createPersona(long rut, const std::string& firstname, const std::string& lastname, const std::tm& birthdate) {
+bool ServicioBD::createPersona(const long rut, const std::string& firstname, const std::string& lastname, const std::tm& birthdate) {
     return usarConexion([&](pqxx::connection & conn) -> bool {
         pqxx::work txn(conn);
         std::string query = "INSERT INTO persons (rut, firstname, lastname, birthdate) VALUES (" +
@@ -69,10 +69,10 @@ bool ServicioBD::createPersona(long rut, const std::string& firstname, const std
     });
 }
 
-Opcional<Persona> ServicioBD::getPersonaById(long id) {
+Opcional<Persona> ServicioBD::getPersonaByRut(const long rut) {
     return usarConexion([&](pqxx::connection & conn) -> Opcional<Persona> {
         pqxx::work txn(conn);
-        std::string query = "SELECT id, rut, firstname, lastname, birthdate FROM persons WHERE id = " + txn.quote(id);
+        std::string query = "SELECT pk, rut, firstname, lastname, birthdate, created, updated FROM persons WHERE rut = " + txn.quote(rut);
         pqxx::result r = txn.exec(query);
         txn.commit();
 
@@ -81,34 +81,13 @@ Opcional<Persona> ServicioBD::getPersonaById(long id) {
         } else {
             const pqxx::row& fila = r[0];
                     Persona p(
-                    fila["id"].as<long>(),
+                    fila["pk"].as<long>(),
                     fila["rut"].as<long>(),
                     fila["firstname"].as<std::string>(),
                     fila["lastname"].as<std::string>(),
-                    fila["birthdate"].as<std::string>()
-                    );
-            return Opcional<Persona>(p);
-        }
-    });
-}
-
-Opcional<Persona> ServicioBD::getPersonaByRut(long rut) {
-    return usarConexion([&](pqxx::connection & conn) -> Opcional<Persona> {
-        pqxx::work txn(conn);
-        std::string query = "SELECT id, rut, firstname, lastname, birthdate FROM persons WHERE rut = " + txn.quote(rut);
-        pqxx::result r = txn.exec(query);
-        txn.commit();
-
-        if (r.empty()) {
-            return Opcional<Persona>();
-        } else {
-            const pqxx::row& fila = r[0];
-                    Persona p(
-                    fila["id"].as<long>(),
-                    fila["rut"].as<long>(),
-                    fila["firstname"].as<std::string>(),
-                    fila["lastname"].as<std::string>(),
-                    fila["birthdate"].as<std::string>()
+                    fila["birthdate"].as<std::string>(),
+                    fila["created"].as<std::string>(),
+                    fila["updated"].as<std::string>()
                     );
             return Opcional<Persona>(p);
         }
@@ -118,7 +97,7 @@ Opcional<Persona> ServicioBD::getPersonaByRut(long rut) {
 std::vector<Persona> ServicioBD::getAllPersonas() {
     return usarConexion([&](pqxx::connection & conn) -> std::vector<Persona> {
         pqxx::work txn(conn);
-        std::string query = "SELECT id, rut, firstname, lastname, birthdate FROM persons";
+        std::string query = "SELECT pk, rut, firstname, lastname, birthdate, created, updated FROM persons";
         pqxx::result r = txn.exec(query);
         txn.commit();
 
@@ -126,11 +105,13 @@ std::vector<Persona> ServicioBD::getAllPersonas() {
         for (pqxx::result::const_iterator it = r.begin(); it != r.end(); ++it) {
             const pqxx::row& fila = *it;
                     Persona p(
-                    fila["id"].as<long>(),
+                    fila["pk"].as<long>(),
                     fila["rut"].as<long>(),
                     fila["firstname"].as<std::string>(),
                     fila["lastname"].as<std::string>(),
-                    fila["birthdate"].as<std::string>()
+                    fila["birthdate"].as<std::string>(),
+                    fila["created"].as<std::string>(),
+                    fila["updated"].as<std::string>()
                     );
                     personss.push_back(p);
         }
@@ -138,23 +119,23 @@ std::vector<Persona> ServicioBD::getAllPersonas() {
     });
 }
 
-bool ServicioBD::updatePersona(long id, const std::string& firstname, const std::string& lastname, const std::string& birthdate) {
+bool ServicioBD::updatePersona(const long rut, const std::string& firstname, const std::string& lastname, const std::tm& birthdate) {
     return usarConexion([&](pqxx::connection & conn) -> bool {
         pqxx::work txn(conn);
         std::string query = "UPDATE persons SET firstname = " + txn.quote(firstname) +
                 ", lastname = " + txn.quote(lastname) +
-                ", birthdate = " + txn.quote(birthdate) +
-                " WHERE id = " + txn.quote(id);
+                ", birthdate = " + txn.quote(formatear_fecha(birthdate)) +
+                ", updated = NOW() WHERE rut = " + txn.quote(rut);
         txn.exec(query);
         txn.commit();
         return true;
     });
 }
 
-bool ServicioBD::deletePersona(long id) {
+bool ServicioBD::deletePersona(const long rut) {
     return usarConexion([&](pqxx::connection & conn) -> bool {
         pqxx::work txn(conn);
-        std::string query = "DELETE FROM persons WHERE id = " + txn.quote(id);
+        std::string query = "DELETE FROM persons WHERE rut = " + txn.quote(rut);
         txn.exec(query);
         txn.commit();
         return true;

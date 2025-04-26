@@ -18,22 +18,19 @@ class ServicioBD {
 public:
     ServicioBD();
     explicit ServicioBD(const std::string& connStr, std::size_t poolSize = 10);
-    // Destructor: cierra la conexión y libera memoria.
-    ~ServicioBD();
+
 
     // Operaciones CRUD:
     // CREATE: Inserta una nueva persona.
-    bool createPersona(long rut, const std::string &firstname, const std::string &lastname, const std::string &birthdate);
-    // READ: Obtiene una persona por su ID.
-    Opcional<Persona> getPersonaById(long id);
+    bool createPersona(const long rut, const std::string& firstname, const std::string& lastname, const std::tm& birthdate);
     // READ: Obtiene una persona por su RUT.
-    Opcional<Persona> getPersonaByRut(long rut);
+    Opcional<Persona> getPersonaByRut(const long rut);
     // READ: Obtiene todas las personas.
     std::vector<Persona> getAllPersonas();
     // UPDATE: Actualiza los datos de una persona.
-    bool updatePersona(long id, const std::string &firstname, const std::string &lastname, const std::string &birthdate);
+    bool updatePersona(const long rut, const std::string& firstname, const std::string& lastname, const std::tm& birthdate);
     // DELETE: Elimina una persona.
-    bool deletePersona(long id);
+    bool deletePersona(const long rut);
 
 private:
 

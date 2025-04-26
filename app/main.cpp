@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <future>
 #include <vector>
 #include "Utilidades.h"
 #include "Persona.h"
@@ -66,9 +67,9 @@ int main(int argc, char** argv) {
             for (Persona& p : personas) {
                 Opcional<Persona> original = db.getPersonaByRut(p.GetRut());
                 if (original.estaPresente()) {
-                    db.updatePersona(p.GetRut(), p.GetNombres(), p.GetApellidos(), formatear_fecha(p.GetFechaNacimiento()));
+                    db.updatePersona(p.GetRut(), p.GetNombres(), p.GetApellidos(), p.GetFechaNacimiento());
                 } else {
-                    db.createPersona(p.GetRut(), p.GetNombres(), p.GetApellidos(), formatear_fecha(p.GetFechaNacimiento()));
+                    db.createPersona(p.GetRut(), p.GetNombres(), p.GetApellidos(), p.GetFechaNacimiento());
                 }
             }
         }
